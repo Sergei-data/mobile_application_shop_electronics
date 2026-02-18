@@ -1,27 +1,84 @@
-# Compiled class file
+############################
+# OS / Editors
+############################
+.DS_Store
+Thumbs.db
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+
+############################
+# Android / Gradle (monorepo: android/)
+############################
+# Gradle
+**/.gradle/
+**/build/
+**/out/
+**/.cxx/
+**/.kotlin/
+
+# Local Android SDK path (must not be committed)
+**/local.properties
+
+# Android Studio caches
+**/.idea/
+**/*.iml
+
+# Kotlin / JVM
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
 
-# Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
-.kotlin/
+# Keystore / signing
+*.jks
+*.keystore
+
+# Android build artifacts
+*.apk
+*.aab
+
+# NDK
+**/obj/
+**/.externalNativeBuild/
+
+############################
+# Python / FastAPI (monorepo: backend/)
+############################
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# virtual env
+.venv/
+venv/
+ENV/
+
+# dotenv (do not commit secrets)
+.env
+.env.*
+!.env.example
+
+############################
+# Docker
+############################
+# docker volumes/local data (если вдруг заведёшь локально)
+**/pgdata/
+**/data/
+**/minio-data/
+
+############################
+# Logs
+############################
+*.log
+logs/
