@@ -1,3 +1,7 @@
+
+# docker compose up -d
+# docker compose exec api alembic upgrade head
+# docker compose --profile manual run --rm seed
 services:
   db:
     image: postgres:16
@@ -11,9 +15,42 @@ services:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U shop -d shop"]
-      interval: 5s
+      interval: 3s
       timeout: 3s
       retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio12345
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./seed/images:/seed/images:ro
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minio minio12345;
+      mc mb -p local/product-images || true;
+      mc anonymous set download local/product-images || true;
+      mc mirror --overwrite /seed/images local/product-images;
+      echo 'MinIO seed done';
+      "
 
   api:
     build: .
@@ -22,13 +59,31 @@ services:
     environment:
       - TZ=Europe/Berlin
       - DATABASE_URL=postgresql+asyncpg://shop:shop@db:5432/shop
+      - S3_PUBLIC_BASE_URL=http://localhost:9000
+      - S3_BUCKET_NAME=product-images
+      - ENV=dev
+      - SEED_ON_STARTUP=false
+    depends_on:
+      db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  seed:
+    build: .
+    profiles: ["manual"]
+    environment:
+      - TZ=Europe/Berlin
+      - DATABASE_URL=postgresql+asyncpg://shop:shop@db:5432/shop
+      - S3_PUBLIC_BASE_URL=http://localhost:9000
+      - S3_BUCKET_NAME=product-images
       - ENV=dev
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      sh -c "alembic -c /app/alembic.ini upgrade head
-      && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: python -m app.db.seed_run
 
 volumes:
   pgdata:
+  minio_data:

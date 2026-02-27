@@ -23,7 +23,9 @@ async def get_product(session: AsyncSession, product_id: int) -> Product | None:
 
 
 async def create_product(session: AsyncSession, data: ProductCreate) -> Product:
-    obj = Product(**data.model_dump(exclude_unset=True))
+    payload = data.model_dump(exclude_unset=True, exclude_none=True)
+    payload.pop("created_at", None)  # на всякий случай
+    obj = Product(**payload)
     session.add(obj)
     await session.commit()
     await session.refresh(obj)
@@ -31,7 +33,8 @@ async def create_product(session: AsyncSession, data: ProductCreate) -> Product:
 
 
 async def update_product(session: AsyncSession, obj: Product, data: ProductUpdate) -> Product:
-    patch = data.model_dump(exclude_unset=True)
+    patch = data.model_dump(exclude_unset=True, exclude_none=True)
+    patch.pop("created_at", None)
     for k, v in patch.items():
         setattr(obj, k, v)
 

@@ -1,7 +1,17 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.core.config import settings
 from app.models.product import Product
+import os
+
+
+
+
+def s3_url(key: str) -> str:
+    # ключ типа "phones/phone1.jpg"
+    base = settings.S3_PUBLIC_BASE_URL.rstrip("/")
+    bucket = settings.S3_BUCKET_NAME
+    return f"{base}/{bucket}/{key}"
 
 
 SEED_PRODUCTS = [
@@ -12,7 +22,7 @@ SEED_PRODUCTS = [
         description="Компактный флагман, 128 ГБ.",
         rating=4.8,
         discount_percent=10,
-        image_url="https://.../pixel8.png",
+        image_url=s3_url("phones/phone1.png")
     ),
     dict(
         category_id=2,
@@ -21,7 +31,7 @@ SEED_PRODUCTS = [
         description='15.6", 16 ГБ RAM, 512 ГБ SSD.',
         rating=4.4,
         discount_percent=0,
-        image_url="https://.../vivobook.png",
+        image_url=s3_url("laptops/laptop1.jpg"),
     ),
     dict(
         category_id=3,
@@ -30,7 +40,7 @@ SEED_PRODUCTS = [
         description="Шумоподавление, Bluetooth.",
         rating=4.9,
         discount_percent=5,
-        image_url="https://.../sony.png",
+        image_url=s3_url("audio/audio1.jpeg"),
     ),
     dict(
         category_id=4,
@@ -39,17 +49,23 @@ SEED_PRODUCTS = [
         description="4K, WebOS, 120 Гц.",
         rating=4.6,
         discount_percent=20,
-        image_url="https://.../lg55.png",
+        image_url=s3_url("tv/tv1.jpg"),
     ),
 ]
 
 
 async def seed_products(session: AsyncSession) -> int:
-    # чтобы не дублировать — проверяем, есть ли уже хоть один товар
     exists = await session.execute(select(Product.id).limit(1))
     if exists.scalar_one_or_none() is not None:
         return 0
 
-    session.add_all([Product(**p) for p in SEED_PRODUCTS])
+    clean = []
+    for p in SEED_PRODUCTS:
+        p = dict(p)
+        if p.get("created_at") is None:
+            p.pop("created_at", None)
+        clean.append(Product(**p))
+
+    session.add_all(clean)
     await session.commit()
-    return len(SEED_PRODUCTS)
+    return len(clean)
