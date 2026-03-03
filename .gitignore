@@ -4,17 +4,17 @@
 .DS_Store
 Thumbs.db
 
+############################
 # IntelliJ / Android Studio
+############################
 .idea/
 *.iml
 *.ipr
 *.iws
-
-# VS Code
 .vscode/
 
 ############################
-# Android / Gradle (monorepo: android/)
+# Android / Gradle 
 ############################
 # Gradle
 **/.gradle/
@@ -23,21 +23,8 @@ Thumbs.db
 **/.cxx/
 **/.kotlin/
 
-# Local Android SDK path (must not be committed)
+# Local Android SDK path 
 **/local.properties
-
-# Android Studio caches
-**/.idea/
-**/*.iml
-
-# Kotlin / JVM
-*.class
-hs_err_pid*
-replay_pid*
-
-# Keystore / signing
-*.jks
-*.keystore
 
 # Android build artifacts
 *.apk
@@ -48,7 +35,20 @@ replay_pid*
 **/.externalNativeBuild/
 
 ############################
-# Python / FastAPI (monorepo: backend/)
+# Kotlin / JVM
+############################
+*.class
+hs_err_pid*
+replay_pid*
+
+############################
+# Keystore / signing
+############################
+*.jks
+*.keystore
+
+############################
+# Python / FastAPI (backend/)
 ############################
 __pycache__/
 *.py[cod]
@@ -59,23 +59,23 @@ __pycache__/
 .ruff_cache/
 .cache/
 
-# virtual env
-.venv/
-venv/
-ENV/
-
-# dotenv (do not commit secrets)
-.env
-.env.*
-!.env.example
+# Virtual environments
+backend/.venv/
+backend/venv/
+backend/ENV/
 
 ############################
-# Docker
+# dotenv 
 ############################
-# docker volumes/local data (если вдруг заведёшь локально)
-**/pgdata/
-**/data/
-**/minio-data/
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+############################
+# Docker volumes
+############################
+backend/pgdata/
+backend/minio_data/
 
 ############################
 # Logs
