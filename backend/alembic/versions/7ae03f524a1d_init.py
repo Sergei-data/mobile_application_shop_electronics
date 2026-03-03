@@ -1,10 +1,3 @@
-"""init
-
-Revision ID: 7ae03f524a1d
-Revises: 
-Create Date: 2026-02-21 22:57:59.627875
-
-"""
 from typing import Sequence, Union
 
 from alembic import op

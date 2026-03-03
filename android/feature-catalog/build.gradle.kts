@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
 
     implementation(project(":domain"))
+    implementation(project(":data"))
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.compose.material:material-icons-extended")

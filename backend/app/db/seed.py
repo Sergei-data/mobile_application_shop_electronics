@@ -6,12 +6,12 @@ import os
 
 
 
+PUBLIC_S3_BASE = os.getenv("PUBLIC_S3_BASE", "http://localhost:9000")
+BUCKET = os.getenv("S3_BUCKET", "product-images")
 
 def s3_url(key: str) -> str:
-    # ключ типа "phones/phone1.jpg"
-    base = settings.S3_PUBLIC_BASE_URL.rstrip("/")
-    bucket = settings.S3_BUCKET_NAME
-    return f"{base}/{bucket}/{key}"
+    key = key.lstrip("/")
+    return f"{PUBLIC_S3_BASE}/{BUCKET}/{key}"
 
 
 SEED_PRODUCTS = [

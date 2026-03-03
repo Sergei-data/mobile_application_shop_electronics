@@ -1,76 +1,96 @@
 package com.example.diplom.feature.catalog.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.diplom.data.repository.RepositoryProvider
+import com.example.diplom.domain.model.Category
 import com.example.diplom.domain.model.Product
 import com.example.diplom.domain.usecase.GetVisibleProductsUseCase
 import com.example.diplom.domain.usecase.SortOption
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-/**
- * Состояние каталога (то, что нужно UI).
- *
- * Что делает:
- * - хранит строку поиска, выбранную сортировку и список товаров для отображения.
- *
- * С чем связан:
- * - ProductListScreen подписывается на это состояние и рисует UI.
- */
 data class CatalogUiState(
+    val categories: List<Category> = emptyList(),
+    val categoryTitle: String? = null,
     val searchText: String = "",
     val sortOption: SortOption = SortOption.POPULAR,
-    val visibleProducts: List<Product> = emptyList()
+    val visibleProducts: List<Product> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
 
-/**
- * ViewModel каталога.
- *
- * Что делает:
- * - хранит UI-состояние каталога,
- * - получает входные товары (уже отфильтрованные по категории в NavGraph),
- * - применяет usecase (поиск + сортировка) и обновляет visibleProducts.
- *
- * С чем связан:
- * - ProductListScreen вызывает методы updateSearchText/updateSortOption/setSourceProducts.
- */
 class CatalogViewModel(
     private val getVisibleProductsUseCase: GetVisibleProductsUseCase = GetVisibleProductsUseCase()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CatalogUiState())
+    private val repository = RepositoryProvider.productRepository
+
+    private val _uiState = MutableStateFlow(CatalogUiState(isLoading = false))
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 
-    // “Исходные товары” (после фильтра категории из NavGraph)
     private var sourceProducts: List<Product> = emptyList()
 
-    /**
-     * Устанавливает исходный список товаров (при открытии экрана или смене категории).
-     */
-    fun setSourceProducts(products: List<Product>) {
-        sourceProducts = products
-        recalcVisibleProducts()
+    init {
+        viewModelScope.launch {
+            try {
+                val cats = repository.getCategories()
+                _uiState.value = _uiState.value.copy(categories = cats)
+            } catch (_: Throwable) {
+            }
+        }
     }
 
-    /**
-     * Обновляет текст поиска и пересчитывает список.
-     */
+    fun load(categoryId: Int?) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+                val categories = if (_uiState.value.categories.isEmpty()) {
+                    repository.getCategories()
+                } else {
+                    _uiState.value.categories
+                }
+
+                val allProducts = repository.getProducts()
+                val filtered = if (categoryId == null) allProducts else allProducts.filter { it.categoryId == categoryId }
+
+                val title = if (categoryId == null) null else {
+                    categories.firstOrNull { it.id == categoryId }?.title
+                        ?: repository.getCategoryById(categoryId)?.title
+                }
+
+                sourceProducts = filtered
+
+                _uiState.value = _uiState.value.copy(
+                    categories = categories,
+                    categoryTitle = title,
+                    isLoading = false,
+                    error = null
+                )
+
+                recalcVisibleProducts()
+            } catch (t: Throwable) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = (t.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
     fun updateSearchText(text: String) {
         _uiState.value = _uiState.value.copy(searchText = text)
         recalcVisibleProducts()
     }
 
-    /**
-     * Обновляет вариант сортировки и пересчитывает список.
-     */
     fun updateSortOption(option: SortOption) {
         _uiState.value = _uiState.value.copy(sortOption = option)
         recalcVisibleProducts()
     }
 
-    /**
-     * Пересчитывает список товаров для отображения (поиск + сортировка).
-     */
     private fun recalcVisibleProducts() {
         val state = _uiState.value
         val visible = getVisibleProductsUseCase.execute(

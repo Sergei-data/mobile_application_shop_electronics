@@ -34,33 +34,13 @@ import androidx.compose.material3.Icon
 
 
 
-/**
- * Режим отображения карточки товара.
- *
- * Что делает:
- * - определяет, как карточка должна выглядеть (компактно или полно).
- *
- * С чем связан:
- * - HomeScreen использует COMPACT,
- * - ProductListScreen использует FULL.
- */
+
 enum class ProductCardMode {
     COMPACT,
     FULL
 }
 
-/**
- * Единая карточка товара для всего приложения.
- *
- * Что делает:
- * - в режиме COMPACT: название + цена (для Home),
- * - в режиме FULL: скидка/рейтинг/цена + кнопка "В корзину" (для каталога).
- *
- * С чем связан:
- * - HomeScreen и ProductListScreen вызывают этот компонент,
- * - onOpenDetails ведёт на детали товара,
- * - onAddToCart используется только для FULL (можно передать null в COMPACT).
- */
+
 @Composable
 fun ProductCard(
     product: Product,
@@ -91,15 +71,7 @@ fun ProductCard(
 }
 
 
-/**
- * Контент карточки в компактном режиме (Home).
- *
- * Что делает:
- * - показывает название и цену.
- *
- * С чем связан:
- * - используется внутри ProductCard(mode = COMPACT).
- */
+
 @Composable
 private fun CompactContent(product: Product) {
     Box(
@@ -127,16 +99,7 @@ private fun CompactContent(product: Product) {
     }
 }
 
-/**
- * Контент карточки в полном режиме (Каталог).
- *
- * Что делает:
- * - показывает скидку, рейтинг, название, цену,
- * - показывает кнопку "В корзину" (если onAddToCart не null).
- *
- * С чем связан:
- * - используется внутри ProductCard(mode = FULL).
- */
+
 @Composable
 private fun FullContent(product: Product, onAddToCart: (() -> Unit)?) {
     Column {
@@ -194,15 +157,7 @@ private fun FullContent(product: Product, onAddToCart: (() -> Unit)?) {
 
 
 
-/**
- * Бейдж скидки вида "-15%".
- *
- * Что делает:
- * - рисует небольшую плашку со скидкой.
- *
- * С чем связан:
- * - используется внутри FullContent.
- */
+
 @Composable
 private fun DiscountBadge(percent: Int) {
     Box(
@@ -215,15 +170,7 @@ private fun DiscountBadge(percent: Int) {
     }
 }
 
-/**
- * Чип рейтинга вида "★ 4.8".
- *
- * Что делает:
- * - показывает звёздочку и значение рейтинга.
- *
- * С чем связан:
- * - используется внутри FullContent.
- */
+
 @Composable
 private fun RatingChip(rating: Double) {
     Box(

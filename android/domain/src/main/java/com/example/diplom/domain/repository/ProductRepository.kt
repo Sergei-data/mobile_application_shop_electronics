@@ -4,8 +4,8 @@ import com.example.diplom.domain.model.Category
 import com.example.diplom.domain.model.Product
 
 interface ProductRepository {
-    fun getProducts(): List<Product>
-    fun getCategories(): List<Category>
-    fun getProductById(id: Int): Product?
-    fun getCategoryById(id: Int): Category?
+    suspend fun getProducts(): List<Product>
+    suspend fun getCategories(): List<Category>
+    suspend fun getProductById(id: Int): Product?
+    suspend fun getCategoryById(id: Int): Category?
 }

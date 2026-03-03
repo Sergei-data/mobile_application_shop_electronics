@@ -23,19 +23,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 
 
 
-/**
- * Главный экран-обертка всего приложения.
- *
- * Что делает:
- * - создает navController,
- * - создает cartState (общее состояние корзины),
- * - рисует Scaffold с BottomBar,
- * - внутри запускает AppNavGraph и прокидывает padding, чтобы контент не залезал под BottomBar.
- *
- * С чем связан:
- * - MainActivity вызывает MainScreen() вместо AppNavGraph().
- * - cartState передается и в BottomBar (для бейджа), и в AppNavGraph (для работы корзины).
- */
+
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -59,19 +47,7 @@ fun MainScreen() {
     }
 }
 
-/**
- * Нижняя панель навигации (BottomBar).
- *
- * Что делает:
- * - показывает вкладки (Главная/Каталог/Корзина/Профиль),
- * - подсвечивает текущую вкладку,
- * - показывает бейдж на "Корзине" (кол-во позиций),
- * - по нажатию делает navController.navigate(route) и не плодит копии экранов.
- *
- * С чем связан:
- * - использует bottomNavItems из BottomNavItem.kt
- * - берет cartState, чтобы получить число товаров и нарисовать Badge.
- */
+
 @Composable
 fun AppBottomBar(
     navController: NavHostController,
@@ -133,16 +109,7 @@ fun AppBottomBar(
     }
 }
 
-/**
- * Иконка корзины с бейджем (числом).
- *
- * Что делает:
- * - рисует иконку,
- * - поверх иконки рисует Badge с текстом (например "2").
- *
- * С чем связан:
- * - используется только в AppBottomBar для вкладки Routes.CART.
- */
+
 @Composable
 fun CartIconWithBadge(
     icon: androidx.compose.ui.graphics.vector.ImageVector,

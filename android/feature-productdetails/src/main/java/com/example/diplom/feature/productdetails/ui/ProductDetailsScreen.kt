@@ -5,43 +5,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.diplom.domain.model.Product
+import com.example.diplom.feature.productdetails.ui.viewmodel.ProductDetailsViewModel
 import kotlinx.coroutines.launch
 
-/**
- * Экран деталей товара.
- *
- * Что делает:
- * - показывает информацию о товаре,
- * - дает добавить товар в корзину,
- * - показывает Snackbar после добавления,
- * - по кнопке в Snackbar может перейти в корзину.
- *
- * С чем связан:
- * - onAddToCart(product) меняет cartState (в NavGraph/MainScreen),
- * - onGoToCart() вызывает navController.navigate(Routes.CART) из NavGraph,
- * - onBack() возвращает назад.
- */
 @Composable
 fun ProductDetailsScreen(
-    product: Product?,
+    productId: Int,
     onBack: () -> Unit,
     onAddToCart: (Product) -> Unit,
     onGoToCart: () -> Unit
 ) {
-    // Хост для Snackbar (управляет показом сообщений)
-    val snackbarHostState = remember { SnackbarHostState() }
+    val vm: ProductDetailsViewModel = viewModel()
+    val state = vm.uiState.collectAsState().value
 
-    // CoroutineScope нужен, потому что showSnackbar — suspend функция
+    LaunchedEffect(productId) {
+        vm.load(productId)
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -53,15 +47,21 @@ fun ProductDetailsScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Button(onClick = onBack) {
-                Text("Назад")
+            Button(onClick = onBack) { Text("Назад") }
+
+            if (state.isLoading) {
+                Text("Загрузка...", modifier = Modifier.padding(top = 16.dp))
+                return@Scaffold
             }
 
+            if (state.error != null) {
+                Text("Ошибка: ${state.error}", modifier = Modifier.padding(top = 16.dp))
+                return@Scaffold
+            }
+
+            val product = state.product
             if (product == null) {
-                Text(
-                    text = "Товар не найден",
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Text("Товар не найден", modifier = Modifier.padding(top = 16.dp))
                 return@Scaffold
             }
 
@@ -85,17 +85,13 @@ fun ProductDetailsScreen(
 
             Button(
                 onClick = {
-                    // 1) Добавляем товар в корзину
                     onAddToCart(product)
 
-                    // 2) Показываем Snackbar с действием "Корзина"
                     scope.launch {
                         val result = snackbarHostState.showSnackbar(
                             message = "Добавлено в корзину",
                             actionLabel = "Корзина"
                         )
-
-                        // 3) Если нажали action — переходим в корзину
                         if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
                             onGoToCart()
                         }
