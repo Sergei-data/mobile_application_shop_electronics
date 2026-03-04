@@ -34,6 +34,7 @@ import com.example.diplom.core.ui.components.ProductCard
 import com.example.diplom.core.ui.components.ProductCardMode
 import com.example.diplom.domain.model.Product
 import com.example.diplom.feature.home.ui.viewmodel.HomeViewModel
+import com.example.diplom.domain.model.Category
 
 @Composable
 fun HomeScreen(
@@ -42,6 +43,7 @@ fun HomeScreen(
 ) {
     val vm: HomeViewModel = viewModel()
     val state = vm.uiState.collectAsState().value
+    val categories = state.categories
 
     if (state.isLoading) {
         Text("Загрузка...")
@@ -96,6 +98,22 @@ fun HomeScreen(
                 singleLine = true
             )
         }
+
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            if (categories.isNotEmpty()) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(categories, key = { it.id }) { category: Category ->
+                        CategoryChip(
+                            title = category.title,
+                            onClick = { onCategoryClick(category.id) }
+                        )
+                    }
+                }
+            } else {
+                Text("Категории не найдены")
+            }
+        }
+
 
         item(span = { GridItemSpan(maxLineSpan) }) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -193,5 +211,23 @@ private fun AdBanner(
                 )
             ) {}
         }
+    }
+}
+
+
+@Composable
+private fun CategoryChip(
+    title: String,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }

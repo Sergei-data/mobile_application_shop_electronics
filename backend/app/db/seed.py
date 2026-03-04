@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.product import Product
+from sqlalchemy import text
 import os
 
 
@@ -69,3 +70,27 @@ async def seed_products(session: AsyncSession) -> int:
     session.add_all(clean)
     await session.commit()
     return len(clean)
+
+
+async def seed_categories(session):
+    data = [
+        (1, "Смартфоны"),
+        (2, "Ноутбуки"),
+        (3, "Аудио"),
+        (4, "Телевизоры"),
+    ]
+
+    for cid, title in data:
+        await session.execute(
+            text(
+                """
+                insert into categories (id, title)
+                values (:id, :title)
+                on conflict (id) do update set title = excluded.title
+                """
+            ),
+            {"id": cid, "title": title},
+        )
+
+    await session.commit()
+    return len(data)

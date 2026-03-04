@@ -19,6 +19,11 @@ class Product(Base):
 
     rating: Mapped[float] = mapped_column(Float, nullable=False, server_default=text("0"))
     discount_percent: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    reviews_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0")
+    )
 
     # epoch millis
     created_at: Mapped[int] = mapped_column(
