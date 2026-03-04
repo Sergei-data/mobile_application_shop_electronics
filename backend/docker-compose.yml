@@ -91,7 +91,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: python -m app.db.seed_run
+    command: python -m seed.seed_run
 
 volumes:
   pgdata:

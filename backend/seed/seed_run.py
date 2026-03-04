@@ -1,5 +1,5 @@
 import asyncio
-from app.db.seed import seed_categories, seed_products
+from seed.seed import seed_categories, seed_products
 from app.db.session import async_session_maker
 
 

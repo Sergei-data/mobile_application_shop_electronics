@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.db.session import async_session_maker
-from app.db.seed import seed_products
+from seed.seed import seed_products
 from app.api.v1.router import api_router
 from app.core.config import settings
 from sqlalchemy.exc import ProgrammingError
