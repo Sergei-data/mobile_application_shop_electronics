@@ -16,5 +16,4 @@ async def on_startup():
             async with async_session_maker() as session:
                 await seed_products(session)
         except ProgrammingError:
-            # миграций нет => таблиц нет => не валим API
             return

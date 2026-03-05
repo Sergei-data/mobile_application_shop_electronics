@@ -59,6 +59,10 @@ services:
     ports:
       - "8000:8000"
     environment:
+      KEYCLOAK_REALM: "shop"
+      JWT_AUDIENCE: ""
+      KEYCLOAK_INTERNAL_BASE_URL: "http://keycloak:8080"
+      KEYCLOAK_ISSUER_URLS: '["http://10.0.2.2:8080/realms/shop","http://localhost:8080/realms/shop"]'
       PUBLIC_S3_BASE: "http://10.0.2.2:9000"
       S3_BUCKET: "product-images"
       TZ: "Europe/Berlin"
@@ -68,6 +72,8 @@ services:
       ENV: "dev"
       SEED_ON_STARTUP: "false"
     depends_on:
+      keycloak:
+        condition: service_healthy
       db:
         condition: service_healthy
       minio-init:
@@ -93,6 +99,51 @@ services:
         condition: service_healthy
     command: python -m seed.seed_run
 
+
+
+  keycloak-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev --http-port=8080
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    ports:
+      - "8080:8080"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
 volumes:
   pgdata:
   minio_data:
+  keycloak_pgdata:
