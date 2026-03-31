@@ -177,16 +177,20 @@ services:
       - prom_data:/prometheus
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: ghcr.io/google/cadvisor:0.56.2
+    privileged: true
     ports:
       - "8082:8080"
+    command:
+      - --docker_only=true
+      - --store_container_labels=true
+      - --docker=unix:///var/run/docker.sock
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
+      - /var/run:/var/run:rw
       - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    depends_on:
-      - prometheus
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/docker:/var/lib/docker:ro
 
   grafana:
     image: grafana/grafana:11.1.5
