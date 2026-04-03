@@ -23,27 +23,59 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.diplom.core.ui.components.ProductCard
 import com.example.diplom.core.ui.components.ProductCardMode
-import com.example.diplom.domain.model.Product
-import com.example.diplom.feature.home.ui.viewmodel.HomeViewModel
 import com.example.diplom.domain.model.Category
+import com.example.diplom.feature.home.ui.viewmodel.HomeViewModel
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.launch
+import com.example.diplom.feature.home.R
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
 
 @Composable
 fun HomeScreen(
     onProductClick: (Int) -> Unit,
     onCategoryClick: (Int) -> Unit
 ) {
+
     val vm: HomeViewModel = viewModel()
     val state = vm.uiState.collectAsState().value
     val categories = state.categories
+    val promoBanners = listOf(
+        "http://10.0.2.2:9000/product-images/promos/sale_week_1.png",
+        "http://10.0.2.2:9000/product-images/promos/sale_week_1.png",
+        "http://10.0.2.2:9000/product-images/promos/sale_week_1.png"
+    )
 
     if (state.isLoading) {
         Text("Загрузка...")
@@ -55,21 +87,8 @@ fun HomeScreen(
         return
     }
 
-    val products = state.products
-
-    var searchText by remember { mutableStateOf("") }
-
-    val quickActions = remember {
-        listOf("Скидки и акции", "Статус заказа", "Shorts", "Магазины")
-    }
-
-    val filteredProducts = remember(searchText, products) {
-        filterProductsByTitle(products, searchText)
-    }
-
-    val visibleHomeProducts = remember(filteredProducts) {
-        filteredProducts.take(30)
-    }
+    val visibleHomeProducts = state.visibleProducts
+    val quickActions = listOf("Скидки и акции", "Статус заказа", "Shorts", "Магазины")
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -91,12 +110,34 @@ fun HomeScreen(
 
         item(span = { GridItemSpan(maxLineSpan) }) {
             OutlinedTextField(
-                value = searchText,
-                onValueChange = { newValue: String -> searchText = newValue },
+                value = state.searchText,
+                onValueChange = vm::onSearchTextChanged,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Искать в магазине") },
                 singleLine = true
             )
+        }
+
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            if (state.searchText.isNotBlank() && state.searchSuggestions.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column {
+                        state.searchSuggestions.forEachIndexed { index, product ->
+                            SuggestionRow(
+                                title = product.title,
+                                onClick = { vm.onSuggestionSelected(product.title) }
+                            )
+
+                            if (index != state.searchSuggestions.lastIndex) {
+                                HorizontalDivider()
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -114,7 +155,6 @@ fun HomeScreen(
             }
         }
 
-
         item(span = { GridItemSpan(maxLineSpan) }) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(quickActions) { title ->
@@ -124,25 +164,30 @@ fun HomeScreen(
         }
 
         item(span = { GridItemSpan(maxLineSpan) }) {
-            AdBanner(
-                title = "Скидки недели",
-                subtitle = "До -20% на популярные товары",
-                onClick = {}
+            PromoBannerCarousel(
+                banners = promoBanners,
+                onBannerClick = { index ->
+                    // потом можно открыть экран акции
+                }
             )
         }
 
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
-                text = buildRecommendationsTitle(searchText),
+                text = if (state.searchText.trim().isEmpty()) {
+                    "Популярные товары"
+                } else {
+                    "Результаты поиска"
+                },
                 style = MaterialTheme.typography.titleLarge
             )
         }
 
-        gridItems(visibleHomeProducts) { p ->
+        gridItems(visibleHomeProducts, key = { it.id }) { product ->
             ProductCard(
-                product = p,
+                product = product,
                 mode = ProductCardMode.FULL,
-                onOpenDetails = { onProductClick(p.id) },
+                onOpenDetails = { onProductClick(product.id) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -160,15 +205,25 @@ fun HomeScreen(
     }
 }
 
-private fun filterProductsByTitle(products: List<Product>, query: String): List<Product> {
-    val q = query.trim()
-    if (q.isEmpty()) return products
-    val qLower = q.lowercase()
-    return products.filter { it.title.lowercase().contains(qLower) }
-}
-
-private fun buildRecommendationsTitle(searchText: String): String {
-    return if (searchText.trim().isEmpty()) "Вам может понравиться" else "Результаты поиска"
+@Composable
+private fun SuggestionRow(
+    title: String,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
 }
 
 @Composable
@@ -186,30 +241,62 @@ private fun QuickActionCard(title: String) {
 }
 
 @Composable
-private fun AdBanner(
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
+private fun PromoBannerCarousel(
+    banners: List<String>,
+    onBannerClick: (Int) -> Unit
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(6.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium)
+    val pagerState = rememberPagerState(pageCount = { banners.size })
+    val scope = rememberCoroutineScope()
 
-            Spacer(Modifier.height(12.dp))
+    Column {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) { page ->
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    .fillMaxSize()
+                    .clickable { onBannerClick(page) },
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                AsyncImage(
+                    model = banners[page],
+                    contentDescription = "Промо-баннер ${page + 1}",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-            ) {}
+            }
+        }
+
+        if (banners.size > 1) {
+            Spacer(Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                banners.indices.forEach { index ->
+                    val isSelected = pagerState.currentPage == index
+
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(if (isSelected) 10.dp else 8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outlineVariant
+                            )
+                            .clickable {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            }
+                    )
+                }
+            }
         }
     }
 }

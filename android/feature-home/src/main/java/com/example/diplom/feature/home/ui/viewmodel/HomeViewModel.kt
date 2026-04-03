@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.diplom.data.repository.RepositoryProvider
 import com.example.diplom.domain.model.Category
 import com.example.diplom.domain.model.Product
+import com.example.diplom.domain.usecase.GetVisibleProductsUseCase
+import com.example.diplom.domain.usecase.SortOption
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +15,10 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val products: List<Product> = emptyList(),
+    val visibleProducts: List<Product> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val searchText: String = "",
+    val searchSuggestions: List<Product> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -21,12 +26,40 @@ data class HomeUiState(
 class HomeViewModel : ViewModel() {
 
     private val repository = RepositoryProvider.productRepository
+    private val visibleProductsUseCase = GetVisibleProductsUseCase()
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
         load()
+    }
+
+    fun onSearchTextChanged(newValue: String) {
+        val current = _uiState.value
+
+        val visibleProducts = visibleProductsUseCase
+            .execute(current.products, newValue, SortOption.POPULAR)
+            .shuffled()
+            .take(30)
+
+        val suggestions = if (newValue.trim().isEmpty()) {
+            emptyList()
+        } else {
+            visibleProductsUseCase
+                .execute(current.products, newValue, SortOption.POPULAR)
+                .take(5)
+        }
+
+        _uiState.value = current.copy(
+            searchText = newValue,
+            visibleProducts = visibleProducts,
+            searchSuggestions = suggestions
+        )
+    }
+
+    fun onSuggestionSelected(title: String) {
+        onSearchTextChanged(title)
     }
 
     private fun load() {
@@ -40,9 +73,16 @@ class HomeViewModel : ViewModel() {
                 val products = productsDeferred.await()
                 val categories = categoriesDeferred.await()
 
+                val visibleProducts = products
+                    .shuffled()
+                    .take(30)
+
                 _uiState.value = HomeUiState(
                     products = products,
+                    visibleProducts = visibleProducts,
                     categories = categories,
+                    searchText = "",
+                    searchSuggestions = emptyList(),
                     isLoading = false,
                     error = null
                 )

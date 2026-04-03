@@ -15,6 +15,7 @@ class Product(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # Базовая цена товара до применения динамической скидки
     price_rub: Mapped[int] = mapped_column(Integer, nullable=False)
 
     rating: Mapped[float] = mapped_column(Float, nullable=False, server_default=text("0"))
@@ -25,7 +26,35 @@ class Product(Base):
         server_default=text("0")
     )
 
-    # epoch millis
+    stock_qty: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0")
+    )
+
+    cost_price_rub: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0")
+    )
+
+    market_price_rub: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    target_sellout_days: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("180")
+    )
+
+    max_discount_percent: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("30")
+    )
+
     created_at: Mapped[int] = mapped_column(
         BigInteger,
         nullable=False,

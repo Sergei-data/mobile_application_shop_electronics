@@ -9,6 +9,12 @@ class Settings(BaseSettings):
     S3_PUBLIC_BASE_URL: str = "http://localhost:9000"
     S3_BUCKET_NAME: str = "product-images"
 
+    # RabbitMQ
+    RABBITMQ_URL: str = "amqp://shop:shop@rabbitmq:5672/"
+    RABBITMQ_EXCHANGE_NAME: str = "shop.events"
+    RABBITMQ_ORDER_CREATED_QUEUE: str = "order.created.queue"
+    RABBITMQ_ORDER_CREATED_ROUTING_KEY: str = "order.created"
+
     # Keycloak / OIDC
     KEYCLOAK_REALM: str = "shop"
     # можно несколько issuer'ов для dev: localhost + 10.0.2.2

@@ -14,3 +14,5 @@ python-jose[cryptography]>=3.3,<4
 
 prometheus-client>=0.20,<1
 prometheus-fastapi-instrumentator>=6,<8
+
+aio-pika

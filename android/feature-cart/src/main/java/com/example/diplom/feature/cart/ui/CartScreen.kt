@@ -4,26 +4,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.diplom.feature.cart.viewmodel.CartState
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
-
-
 
 @Composable
 fun CartScreen(
     cartState: CartState,
     onBack: () -> Unit
 ) {
-    val items by cartState.itemsFlow.collectAsState()  // <-- ВОТ ЭТО КЛЮЧ
+    val items by cartState.itemsFlow.collectAsState()
+    var orderPlaced by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -47,7 +50,9 @@ fun CartScreen(
 
         items.forEach { item ->
             Row(
-                modifier = Modifier.padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -68,10 +73,29 @@ fun CartScreen(
         }
 
         val total = items.sumOf { it.product.priceRub * it.qty }
+
         Text(
             text = "Итого: $total ₽",
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(top = 16.dp)
         )
+
+        Button(
+            onClick = { orderPlaced = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+        ) {
+            Text("Купить")
+        }
+
+        if (orderPlaced) {
+            Text(
+                text = "Демо-заглушка: заказ успешно оформлен",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
     }
 }

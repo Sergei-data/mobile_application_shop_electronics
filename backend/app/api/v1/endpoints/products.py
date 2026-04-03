@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
+from app.services.order_events import publish_order_created
+
 
 from app.crud.product import (
     create_product,
