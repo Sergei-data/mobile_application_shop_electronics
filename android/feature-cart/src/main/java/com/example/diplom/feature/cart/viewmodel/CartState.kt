@@ -12,7 +12,6 @@ class CartState {
     private val _itemsFlow = MutableStateFlow<List<CartItem>>(emptyList())
     val itemsFlow: StateFlow<List<CartItem>> = _itemsFlow
 
-    // Если тебе удобно как раньше: cartState.items
     val items: List<CartItem>
         get() = _itemsFlow.value
 

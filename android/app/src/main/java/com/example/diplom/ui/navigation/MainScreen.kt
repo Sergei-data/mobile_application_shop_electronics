@@ -1,6 +1,5 @@
 package com.example.diplom.ui.navigation
 
-
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -14,21 +13,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.diplom.auth.AuthUiState
 import com.example.diplom.feature.cart.viewmodel.CartState
-import androidx.navigation.NavGraph.Companion.findStartDestination
-
-
-
-
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onLoginClick: () -> Unit = {},
+    onRegisterClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
+    onManageProductsClick: () -> Unit = {},
+    onAdminClick: () -> Unit = {},
+    authUiState: AuthUiState = AuthUiState()
+) {
     val navController = rememberNavController()
-
-    // Состояние корзины живет здесь, чтобы BottomBar видел количество товаров.
     val cartState = remember { CartState() }
 
     Scaffold(
@@ -42,11 +43,19 @@ fun MainScreen() {
         AppNavGraph(
             navController = navController,
             innerPaddingModifier = Modifier.padding(innerPadding),
-            cartState = cartState
+            cartState = cartState,
+            onLoginClick = onLoginClick,
+            onRegisterClick = onRegisterClick,
+            onLogoutClick = onLogoutClick,
+            onManageProductsClick = onManageProductsClick,
+            onAdminClick = onAdminClick,
+            isAuthorized = authUiState.isAuthorized,
+            displayName = authUiState.displayName,
+            email = authUiState.email,
+            roleLabel = authUiState.roleLabel
         )
     }
 }
-
 
 @Composable
 fun AppBottomBar(
@@ -55,9 +64,6 @@ fun AppBottomBar(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-
-    // Количество позиций в корзине (не суммарное количество штук, а именно строк/товаров).
-    // Если хочешь суммарное количество - сделаем позже.
     val cartItemsCount = cartState.items.size
 
     NavigationBar {
@@ -68,21 +74,15 @@ fun AppBottomBar(
                 selected = selected,
                 onClick = {
                     if (item.route == Routes.HOME) {
-                        // Всегда возвращаемся именно на корневой Home, без восстановления предыдущего экрана Home-ветки
                         navController.navigate(Routes.HOME) {
-                            // Удаляем всё, что было выше стартового экрана (это гарантирует возврат на Home)
                             popUpTo(navController.graph.findStartDestination().id) {
                                 inclusive = false
-                                // Не сохраняем состояние Home-ветки, чтобы не возвращаться в детали товара
                                 saveState = false
                             }
-                            // Не создаём копии Home
                             launchSingleTop = true
-                            // Не восстанавливаем прошлое состояние Home-ветки (иначе снова откроются детали)
                             restoreState = false
                         }
                     } else {
-                        // Для остальных вкладок можно сохранять/восстанавливать состояние (как "нормальные" табы)
                         navController.navigate(item.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
@@ -93,7 +93,6 @@ fun AppBottomBar(
                     }
                 },
                 icon = {
-                    // Если это вкладка "Корзина" — рисуем иконку с Badge.
                     if (item.route == Routes.CART && cartItemsCount > 0) {
                         CartIconWithBadge(
                             icon = item.icon,
@@ -108,7 +107,6 @@ fun AppBottomBar(
         }
     }
 }
-
 
 @Composable
 fun CartIconWithBadge(

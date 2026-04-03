@@ -19,7 +19,16 @@ import com.example.diplom.feature.productdetails.ui.ProductDetailsScreen
 fun AppNavGraph(
     navController: NavHostController,
     innerPaddingModifier: Modifier,
-    cartState: CartState
+    cartState: CartState,
+    onLoginClick: () -> Unit = {},
+    onRegisterClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
+    onManageProductsClick: () -> Unit = {},
+    onAdminClick: () -> Unit = {},
+    isAuthorized: Boolean = false,
+    displayName: String? = null,
+    email: String? = null,
+    roleLabel: String? = null
 ) {
     NavHost(
         navController = navController,
@@ -89,7 +98,17 @@ fun AppNavGraph(
         }
 
         composable(Routes.PROFILE) {
-            ProfileScreen()
+            ProfileScreen(
+                onLoginClick = onLoginClick,
+                onRegisterClick = onRegisterClick,
+                onLogoutClick = onLogoutClick,
+                onManageProductsClick = onManageProductsClick,
+                onAdminClick = onAdminClick,
+                isAuthorized = isAuthorized,
+                displayName = displayName,
+                email = email,
+                roleLabel = roleLabel
+            )
         }
     }
 }

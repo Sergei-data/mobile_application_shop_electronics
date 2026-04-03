@@ -11,8 +11,10 @@ composeBom = "2024.09.00"
 appcompat = "1.6.1"
 material = "1.10.0"
 jetbrainsKotlinJvm = "2.2.10"
+appauth = "0.11.1"
 
 [libraries]
+openid-appauth = { group = "net.openid", name = "appauth", version.ref = "appauth" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
