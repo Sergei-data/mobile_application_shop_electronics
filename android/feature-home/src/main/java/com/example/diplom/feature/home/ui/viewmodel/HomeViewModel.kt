@@ -37,18 +37,23 @@ class HomeViewModel : ViewModel() {
 
     fun onSearchTextChanged(newValue: String) {
         val current = _uiState.value
+        val trimmed = newValue.trim()
 
-        val visibleProducts = visibleProductsUseCase
+        val rankedProducts = visibleProductsUseCase
             .execute(current.products, newValue, SortOption.POPULAR)
-            .shuffled()
-            .take(30)
 
-        val suggestions = if (newValue.trim().isEmpty()) {
+        val visibleProducts = if (trimmed.isEmpty()) {
+            current.products
+                .shuffled()
+                .take(30)
+        } else {
+            rankedProducts.take(30)
+        }
+
+        val suggestions = if (trimmed.isEmpty()) {
             emptyList()
         } else {
-            visibleProductsUseCase
-                .execute(current.products, newValue, SortOption.POPULAR)
-                .take(5)
+            rankedProducts.take(5)
         }
 
         _uiState.value = current.copy(
